@@ -1,0 +1,12 @@
+node_modules/
+dist/
+client/dist/
+.env
+server/.env
+*.log
+storage/*
+!storage/.gitkeep
+backups/*
+!backups/.gitkeep
+.DS_Store
+Thumbs.db

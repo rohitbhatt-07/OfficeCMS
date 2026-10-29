@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: officecms
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: "npm install && npm install --prefix server && npm install --prefix client && npm run build --prefix client && npm run migrate --prefix server"
+    startCommand: "node server/src/server.js"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: officecms-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateCrypto: true
+      - key: CLIENT_ORIGIN
+        value: ""
+
+databases:
+  - name: officecms-db
+    plan: free
+    region: oregon
+    databaseName: officecms
+    user: officecms_user
