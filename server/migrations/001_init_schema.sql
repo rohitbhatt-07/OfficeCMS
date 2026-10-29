@@ -197,8 +197,15 @@ CREATE TRIGGER users_updated     BEFORE UPDATE ON users     FOR EACH ROW EXECUTE
 CREATE TRIGGER records_updated   BEFORE UPDATE ON records   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER documents_updated BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- ===== Least-privilege access for the app user =====
-GRANT USAGE ON SCHEMA public TO officecms_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO officecms_app;
-REVOKE UPDATE, DELETE ON audit_logs FROM officecms_app;   -- insert + select only
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO officecms_app;
+-- ===== Least-privilege access for the app user (if exists) =====
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'officecms_app') THEN
+    GRANT USAGE ON SCHEMA public TO officecms_app;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO officecms_app;
+    REVOKE UPDATE, DELETE ON audit_logs FROM officecms_app;   -- insert + select only
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO officecms_app;
+  END IF;
+END
+$$;
+

@@ -15,7 +15,7 @@ const schema = z.object({
   DB_OWNER_USER: z.string().optional(),
   DB_OWNER_PASSWORD: z.string().optional(),
   DB_SSL: z.coerce.boolean().optional().default(false),
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').default('super_secret_officecms_jwt_key_2026_secure_random_fallback'),
   JWT_EXPIRES_IN: z.string().default('8h'),
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
   STORAGE_DIR: z.string().default('../storage'),
