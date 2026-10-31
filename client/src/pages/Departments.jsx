@@ -23,8 +23,8 @@ export default function Departments() {
         api.get('/departments'),
         api.get('/categories'),
       ]);
-      setDepartments(deptRes.data.departments);
-      setCategories(catRes.data.categories);
+      setDepartments(deptRes.data.departments || []);
+      setCategories(catRes.data.categories || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -52,6 +52,20 @@ export default function Departments() {
     }
   };
 
+  const handleDeleteDept = async (id, name, count) => {
+    if (count > 0) {
+      alert(`Cannot remove "${name}": ${count} record(s) are currently linked to this department. Please reassign or delete those records first.`);
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to remove the department "${name}"?`)) return;
+    try {
+      await api.delete(`/departments/${id}`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || err.message || 'Failed to remove department');
+    }
+  };
+
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
@@ -69,6 +83,20 @@ export default function Departments() {
     }
   };
 
+  const handleDeleteCategory = async (id, name, count) => {
+    if (count > 0) {
+      alert(`Cannot remove "${name}": ${count} record(s) are currently linked to this category. Please reassign or delete those records first.`);
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to remove the category "${name}"?`)) return;
+    try {
+      await api.delete(`/categories/${id}`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || err.message || 'Failed to remove category');
+    }
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center py-5">
@@ -81,7 +109,7 @@ export default function Departments() {
     <div>
       <div className="mb-4">
         <h2 className="fw-bold mb-1" style={{ letterSpacing: '-0.5px' }}>Departments & Categories</h2>
-        <p className="text-muted small mb-0">Organize and classify office operations, workflows, and records.</p>
+        <p className="text-muted small mb-0">Add, organize, and remove office departments and record categories.</p>
       </div>
 
       <div className="row g-4">
@@ -102,12 +130,13 @@ export default function Departments() {
                     type="text"
                     required
                     className="form-control"
-                    placeholder="New department name..."
+                    placeholder="New department name (e.g. Physics, CS)..."
                     value={newDeptName}
                     onChange={(e) => setNewDeptName(e.target.value)}
                   />
-                  <button type="submit" disabled={deptSubmitting} className="btn btn-primary">
-                    {deptSubmitting ? 'Adding...' : 'Add Dept'}
+                  <button type="submit" disabled={deptSubmitting} className="btn btn-primary d-flex align-items-center gap-1">
+                    <i className="bi bi-plus-lg"></i>
+                    <span>{deptSubmitting ? 'Adding...' : 'Add Dept'}</span>
                   </button>
                 </div>
               </form>
@@ -119,9 +148,19 @@ export default function Departments() {
                       <span className="fw-semibold text-dark">{d.name}</span>
                       <span className="badge bg-success-subtle text-success ms-2" style={{ fontSize: '0.7rem' }}>Active</span>
                     </div>
-                    <span className="badge bg-light text-dark border">
-                      {d.record_count ?? 0} records
-                    </span>
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="badge bg-light text-dark border">
+                        {d.record_count ?? 0} records
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDept(d.id, d.name, d.record_count ?? 0)}
+                        className="btn btn-sm btn-outline-danger py-0 px-2"
+                        title="Remove department"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -147,7 +186,7 @@ export default function Departments() {
                       type="text"
                       required
                       className="form-control"
-                      placeholder="Category name..."
+                      placeholder="Category name (e.g. IT Equipment)..."
                       value={newCatName}
                       onChange={(e) => setNewCatName(e.target.value)}
                     />
@@ -161,8 +200,9 @@ export default function Departments() {
                         value={newCatDesc}
                         onChange={(e) => setNewCatDesc(e.target.value)}
                       />
-                      <button type="submit" disabled={catSubmitting} className="btn btn-primary">
-                        {catSubmitting ? '...' : 'Add'}
+                      <button type="submit" disabled={catSubmitting} className="btn btn-primary d-flex align-items-center gap-1">
+                        <i className="bi bi-plus-lg"></i>
+                        <span>{catSubmitting ? '...' : 'Add'}</span>
                       </button>
                     </div>
                   </div>
@@ -173,14 +213,26 @@ export default function Departments() {
                 {categories.map((c) => (
                   <div key={c.id} className="list-group-item px-0 py-2">
                     <div className="d-flex align-items-center justify-content-between">
-                      <span className="fw-semibold text-dark">{c.name}</span>
-                      <span className="badge bg-light text-dark border">
-                        {c.record_count ?? 0} records
-                      </span>
+                      <div>
+                        <span className="fw-semibold text-dark">{c.name}</span>
+                        {c.description && (
+                          <p className="text-muted small mb-0 mt-1">{c.description}</p>
+                        )}
+                      </div>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="badge bg-light text-dark border">
+                          {c.record_count ?? 0} records
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(c.id, c.name, c.record_count ?? 0)}
+                          className="btn btn-sm btn-outline-danger py-0 px-2"
+                          title="Remove category"
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
-                    {c.description && (
-                      <p className="text-muted small mb-0 mt-1">{c.description}</p>
-                    )}
                   </div>
                 ))}
               </div>

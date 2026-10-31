@@ -25,7 +25,7 @@ async function listRecords(req, res, next) {
     if (q) {
       params.push(`%${q}%`);
       const pIdx = params.length;
-      conditions.push(`(r.title ILIKE $${pIdx} OR r.reference_number ILIKE $${pIdx} OR r.description ILIKE $${pIdx})`);
+      conditions.push(`(r.title ILIKE $${pIdx} OR r.reference_number ILIKE $${pIdx} OR r.description ILIKE $${pIdx} OR r.custom_fields::text ILIKE $${pIdx})`);
     }
 
     if (category_id) {

@@ -50,4 +50,44 @@ async function createCategory(req, res, next) {
   }
 }
 
-module.exports = { categorySchema, listCategories, createCategory };
+async function deleteCategory(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const checkResult = await query(
+      `SELECT COUNT(*)::int AS count FROM records WHERE category_id = $1 AND deleted_at IS NULL`,
+      [id]
+    );
+    const count = checkResult.rows[0]?.count || 0;
+    if (count > 0) {
+      return next(
+        new HttpError(400, `Cannot delete category: ${count} record(s) are currently assigned to it. Please reassign or delete those records first.`)
+      );
+    }
+
+    const { rows } = await query(
+      `DELETE FROM record_categories WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (!rows.length) {
+      return next(new HttpError(404, 'Category not found'));
+    }
+
+    await logAudit({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'category.delete',
+      resourceType: 'category',
+      resourceId: id,
+      details: { name: rows[0].name },
+      ip: req.ip,
+    });
+
+    res.json({ success: true, message: 'Category removed successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { categorySchema, listCategories, createCategory, deleteCategory };

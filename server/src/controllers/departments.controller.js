@@ -49,4 +49,45 @@ async function createDepartment(req, res, next) {
   }
 }
 
-module.exports = { deptSchema, listDepartments, createDepartment };
+async function deleteDepartment(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    // Check if records exist
+    const checkResult = await query(
+      `SELECT COUNT(*)::int AS count FROM records WHERE department_id = $1 AND deleted_at IS NULL`,
+      [id]
+    );
+    const count = checkResult.rows[0]?.count || 0;
+    if (count > 0) {
+      return next(
+        new HttpError(400, `Cannot delete department: ${count} record(s) are currently assigned to it. Please reassign or delete those records first.`)
+      );
+    }
+
+    const { rows } = await query(
+      `DELETE FROM departments WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (!rows.length) {
+      return next(new HttpError(404, 'Department not found'));
+    }
+
+    await logAudit({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'department.delete',
+      resourceType: 'department',
+      resourceId: id,
+      details: { name: rows[0].name },
+      ip: req.ip,
+    });
+
+    res.json({ success: true, message: 'Department removed successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { deptSchema, listDepartments, createDepartment, deleteDepartment };
